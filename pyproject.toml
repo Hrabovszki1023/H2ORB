@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "h2orb"
-version = "0.1.0"
+version = "0.1.1"
 description = "A result browser and reporting tool for test-management data."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -38,6 +38,11 @@ h2orb-check = "h2orb.check_connection:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/h2orb"]
+
+[tool.hatch.build]
+exclude = [
+  "docs/aqua-api/swagger.json",
+]
 
 [tool.pytest.ini_options]
 addopts = "-q"

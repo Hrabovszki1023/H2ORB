@@ -72,6 +72,17 @@ defects, defect descriptions, and direct links back to AQUA. It can also be down
 
 ![AQUA test completion report](https://raw.githubusercontent.com/Hrabovszki1023/H2ORB/main/docs/images/report-preview.png)
 
+## Install from PyPI
+
+Python 3.12 or newer is required:
+
+```powershell
+py -m pip install h2orb
+h2orb
+```
+
+Open <http://127.0.0.1:8000> after configuring the required `ARB_` environment variables.
+
 ## Local setup
 
 Python 3.12 or newer is required.
