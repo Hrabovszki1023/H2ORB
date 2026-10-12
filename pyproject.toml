@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "h2orb"
+version = "0.1.0"
+description = "A result browser and reporting tool for test-management data."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [{ name = "Zoltán Hrabovszki" }]
+dependencies = [
+  "fastapi>=0.115,<1.0",
+  "httpx>=0.27,<1.0",
+  "jinja2>=3.1,<4.0",
+  "pydantic-settings>=2.6,<3.0",
+  "python-multipart>=0.0.12,<1.0",
+  "uvicorn[standard]>=0.32,<1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Hrabovszki1023/H2ORB"
+Repository = "https://github.com/Hrabovszki1023/H2ORB.git"
+Issues = "https://github.com/Hrabovszki1023/H2ORB/issues"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9.0",
+  "pytest-cov>=6.0,<7.0",
+  "respx>=0.22,<1.0",
+  "ruff>=0.8,<1.0",
+]
+
+[project.scripts]
+h2orb = "h2orb.__main__:main"
+h2orb-check = "h2orb.check_connection:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/h2orb"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

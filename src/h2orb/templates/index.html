@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ app_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=0.13.0">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="app-header">
+        <div class="brand">
+          <span class="eyebrow">AQUA REST API proxy</span>
+          <h1>{{ app_name }}</h1>
+          <span class="subtitle" data-i18n="subtitle">Testergebnisse aus AQUA kompakt auswerten</span>
+        </div>
+        <div class="header-tools">
+          <div class="language-switch" aria-label="Language">
+            <button type="button" data-language="de">DE</button>
+            <button type="button" data-language="en">EN</button>
+          </div>
+          <span class="environment">{{ environment }}</span>
+          <span class="status-pill" data-i18n="ready">Bereit</span>
+        </div>
+      </header>
+
+      <aside class="security-notice" role="note">
+        <strong data-i18n="securityNoticeTitle">Nur für interne Netze:</strong>
+        <span data-i18n="securityNoticeText">Diese Version verwendet die zentral hinterlegten AQUA-Zugangsdaten. Jeder Benutzer von H2ORB kann auf das konfigurierte AQUA-Projekt zugreifen. Den Server nicht öffentlich erreichbar machen. Eine persönliche Anmeldung mit eigenen AQUA-Zugangsdaten folgt in der nächsten Version.</span>
+      </aside>
+
+      <details class="browser-card selection-panel" open>
+        <summary>
+          <span data-i18n="selectFolder">AQUA-Startordner auswählen</span>
+          <strong id="selection-summary"></strong>
+        </summary>
+        <div class="selection-content">
+          <div class="selection-toolbar">
+            <p id="tree-status" class="muted" role="status"></p>
+            <button id="reload-tree" class="secondary-button" type="button" data-i18n="reload">Neu laden</button>
+          </div>
+          <div id="project-tree" class="tree" aria-label="AQUA projects and folders"></div>
+          <div id="selection" class="selection" hidden>
+            <div>
+              <span class="selection-label" data-i18n="selectedFolder">Gewählter Startordner</span>
+              <strong id="selection-name"></strong>
+            </div>
+            <button id="analyse-selection" type="button" disabled data-i18n="startAnalysis">Auswertung starten</button>
+          </div>
+        </div>
+      </details>
+
+      <section id="scenario-results" class="browser-card results-card" aria-labelledby="scenario-heading" hidden>
+        <div class="results-heading">
+          <div id="scenario-heading" class="result-view-tabs" role="tablist">
+            <button id="tree-tab" type="button" role="tab" aria-selected="true" data-view="tree" data-i18n="resultTree">Ergebnisbaum</button>
+            <button id="report-tab" type="button" role="tab" aria-selected="false" data-view="report" data-i18n="report">Report</button>
+          </div>
+          <span id="scenario-status" class="muted" role="status"></span>
+          <div class="result-filters" aria-label="Result filters">
+            <label class="filter-switch filter-x">
+              <input id="filter-failed" type="checkbox">
+              <span data-i18n="onlyFailed">Nur X-Testfälle</span>
+            </label>
+            <fieldset id="failure-filters" disabled>
+              <label class="filter-f"><input type="checkbox" value="F" checked> F</label>
+              <label class="filter-n"><input type="checkbox" value="N" checked> N</label>
+              <label class="filter-nq"><input type="checkbox" value="N?" checked> N?</label>
+            </fieldset>
+          </div>
+          <span id="scenario-count" class="count-pill"></span>
+        </div>
+        <div id="tree-view" class="table-wrap" role="tabpanel" aria-labelledby="tree-tab">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th class="action-heading"><span class="sr-only" data-i18n="selectStart">Startordner wählen</span></th>
+                <th class="path-heading" data-i18n="path">Pfad</th>
+                <th class="name-heading" data-i18n="name">Bezeichnung</th>
+                <th class="metric-sum" data-tooltip="sumTip">SUM</th><th class="metric-p" data-tooltip="pTip">P</th>
+                <th class="metric-x" data-tooltip="xTip">X</th><th class="metric-f" data-tooltip="fTip">F</th>
+                <th class="metric-n" data-tooltip="nTip">N</th><th class="metric-nq" data-tooltip="ncandidateTip">N?</th>
+                <th class="metric-a" data-tooltip="aTip">A</th><th class="metric-ne" data-tooltip="neTip">NE</th>
+                <th class="metric-b" data-tooltip="bTip">B</th><th class="metric-nc" data-tooltip="ncTip">NC</th>
+                <th class="metric-na" data-tooltip="naTip">NA</th><th class="metric-unknown" data-tooltip="unknownTip">?</th>
+                <th class="metric-p" data-tooltip="pRateTip">P%</th><th class="metric-x" data-tooltip="xRateTip">X%</th>
+                <th class="metric-f" data-tooltip="fRateTip">F%</th><th class="metric-n" data-tooltip="nRateTip">N%</th>
+                <th class="metric-nq" data-tooltip="ncandidateRateTip">N?%</th>
+              </tr>
+            </thead>
+            <tbody id="scenario-table"></tbody>
+          </table>
+        </div>
+        <div id="report-view" class="report-view" role="tabpanel" aria-labelledby="report-tab" hidden>
+          <div class="report-toolbar">
+            <span class="muted" data-i18n="reportHint">Reproduzierbarer Bericht für den gewählten Startordner</span>
+            <button id="download-markdown" type="button" data-i18n="downloadMarkdown">Markdown herunterladen</button>
+          </div>
+          <article id="report-preview" class="report-preview"></article>
+        </div>
+      </section>
+    </main>
+    <script src="{{ url_for('static', path='/app.js') }}?v=0.13.0" defer></script>
+  </body>
+</html>

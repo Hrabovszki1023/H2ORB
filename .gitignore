@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.codex-tmp/
+.coverage
+htmlcov/
+.env
+.idea/
+.vscode/
+
+# Vendor-provided API specifications are local reference material and are not redistributed.
+docs/aqua-api/swagger.json

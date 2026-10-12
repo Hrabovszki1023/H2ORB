@@ -1,0 +1,25 @@
+services:
+  h2orb:
+    build:
+      context: .
+    image: h2orb:local
+    env_file:
+      - .env
+    environment:
+      ARB_HOST: 0.0.0.0
+      ARB_PORT: 8000
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
