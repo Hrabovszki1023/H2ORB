@@ -8,7 +8,7 @@ version = "0.1.1"
 description = "A result browser and reporting tool for test-management data."
 readme = "README.md"
 requires-python = ">=3.12"
-license = { file = "LICENSE" }
+license = "Apache-2.0"
 authors = [{ name = "Zoltán Hrabovszki" }]
 dependencies = [
   "fastapi>=0.115,<1.0",

@@ -186,9 +186,8 @@ The `main` tag follows the latest successful build from the main branch. Version
 
 ## License
 
-H2ORB is source-available under the
-[H2ORB Community License](LICENSE). Non-commercial use is permitted; commercial use
-requires a separate commercial license. This is not an OSI-approved open-source license.
+H2ORB is open-source software licensed under the
+[Apache License 2.0](LICENSE).
 
 ## Development checks
 
