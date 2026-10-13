@@ -116,7 +116,8 @@ data available to that account.
 
 The next version is planned to request personal AQUA credentials and keep separate server-side
 sessions for individual users. Until that authentication is implemented, network-level access
-control is mandatory.
+control is mandatory. The prioritized implementation tasks and their acceptance criteria are
+maintained in the [security roadmap](docs/security-roadmap.md).
 
 ## Docker
 
@@ -176,13 +177,22 @@ services:
 TLS verification remains enabled. Do not add certificates, `.env`, passwords, or access tokens to
 the image.
 
-### Published image
+### Publish from Gitea to Docker Hub
 
-The tested `linux/amd64` image is published as
-[`hrabovszki/h2orb`](https://hub.docker.com/r/hrabovszki/h2orb).
+Gitea Actions verifies the Python project inside a Python 3.12 Docker build stage, then publishes the tested
+`linux/amd64` image as `hrabovszki/h2orb`. Configure these repository secrets in
+Gitea before running `.gitea/workflows/docker-publish.yaml`:
 
-The `main` tag follows the latest successful build from the main branch. Version tags such as
-`v0.1.0` publish `0.1.0`, `0.1`, `0`, and `latest`; prereleases never move `latest`.
+- `DOCKERHUB_USERNAME`: Docker Hub account name
+- `DOCKERHUB_TOKEN`: Docker Hub personal access token with read, write, and delete permissions
+
+A push to `main` publishes the moving `main` tag and an immutable `sha-*` tag. A tag such as
+`v0.1.0` publishes `0.1.0`, `0.1`, `0`, and `latest`. Prerelease tags never move `latest`.
+After a successful image push, the workflow also synchronizes this README and the short description
+to the Docker Hub overview page.
+
+Never store the Docker Hub password or token in Git. Use a scoped access token instead of the
+account password.
 
 ## License
 
@@ -194,7 +204,13 @@ H2ORB is open-source software licensed under the
 ```powershell
 ruff check .
 pytest
+python tools/check_dependency_licenses.py
 ```
+
+The dependency license policy is defined in `tools/license-policy.toml`. The check follows the
+complete installed H2ORB runtime dependency tree and fails on unknown, denied, or not explicitly
+reviewed licenses. Docker builds additionally generate `THIRD_PARTY_NOTICES.md` and preserve the
+packaged license files under `third-party-licenses/` inside the image.
 
 ## Project structure
 

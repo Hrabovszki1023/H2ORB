@@ -7,9 +7,9 @@ __pycache__/
 .codex-tmp/
 .coverage
 htmlcov/
+build/
+dist/
 .env
 .idea/
 .vscode/
 
-# Vendor-provided API specifications are local reference material and are not redistributed.
-docs/aqua-api/swagger.json

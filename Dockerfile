@@ -7,8 +7,14 @@ WORKDIR /build
 
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
+COPY tools ./tools
 
-RUN python -m pip wheel --wheel-dir /wheels .
+RUN python -m pip wheel --wheel-dir /wheels . packaging \
+    && python -m venv /audit-venv \
+    && /audit-venv/bin/python -m pip install --no-index --find-links=/wheels h2orb packaging \
+    && /audit-venv/bin/python tools/check_dependency_licenses.py \
+        --output /audit-output/THIRD_PARTY_NOTICES.md \
+        --license-dir /audit-output/third-party-licenses
 
 
 FROM builder AS verify
@@ -35,8 +41,10 @@ RUN groupadd --system h2orb \
 WORKDIR /app
 
 COPY --from=builder /wheels /wheels
-RUN python -m pip install /wheels/*.whl \
+RUN python -m pip install --no-index --find-links=/wheels h2orb \
     && rm -rf /wheels
+COPY --from=builder /audit-output/THIRD_PARTY_NOTICES.md ./THIRD_PARTY_NOTICES.md
+COPY --from=builder /audit-output/third-party-licenses ./third-party-licenses
 
 USER h2orb
 

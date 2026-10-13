@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "h2orb"
-version = "0.1.1"
+version = "0.1.2"
 description = "A result browser and reporting tool for test-management data."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -42,6 +42,28 @@ packages = ["src/h2orb"]
 [tool.hatch.build]
 exclude = [
   "docs/aqua-api/swagger.json",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/.gitea/workflows",
+  "/docs/*.md",
+  "/docs/images/*.png",
+  "/src",
+  "/tests",
+  "/tools",
+  "/.dockerignore",
+  "/.env.example",
+  "/.gitignore",
+  "/compose.yaml",
+  "/Dockerfile",
+  "/LICENSE",
+  "/pyproject.toml",
+  "/README.md",
+]
+exclude = [
+  "/docs/aqua-api/swagger.json",
+  "/docs/*.docx",
 ]
 
 [tool.pytest.ini_options]

@@ -1,0 +1,21 @@
+# License identifiers and legacy metadata strings accepted without an individual package review.
+allowed = [
+  "Apache-2.0",
+  "Apache Software License",
+  "MIT",
+  "MIT License",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "BSD License",
+  "ISC",
+  "ISC License (ISCL)",
+  "PSF-2.0",
+  "Python Software Foundation License",
+  "Apache-2.0 OR BSD-2-Clause",
+]
+
+# Weak-copyleft or otherwise exceptional licenses require an explicit package-level decision.
+# certifi supplies Mozilla's CA bundle and is used unchanged through HTTP client dependencies.
+[reviewed.certifi]
+licenses = ["MPL-2.0", "Mozilla Public License 2.0 (MPL 2.0)"]
+reason = "Approved unchanged CA bundle dependency; MPL-2.0 obligations are preserved."
