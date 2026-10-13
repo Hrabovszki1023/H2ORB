@@ -28,7 +28,7 @@ def create_app() -> FastAPI:
     settings = get_settings()
     application = FastAPI(
         title=settings.app_name,
-        version="0.1.2",
+        version="0.1.3",
         lifespan=lifespan,
     )
     application.mount(
