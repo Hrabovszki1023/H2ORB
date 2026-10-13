@@ -5,6 +5,22 @@ Running the current version locally on `127.0.0.1` remains the supported low-ris
 items marked **P0** are complete, a shared deployment must additionally be protected by network
 access controls and must not be reachable from the public Internet.
 
+## Implemented release controls
+
+The following controls are already part of the release process:
+
+- The source distribution uses an explicit allow-list.
+- Wheel and source archives exclude local office documents, the internal AQUA API specification,
+  `.env`, credentials, certificates, caches, and workstation artefacts.
+- TestPyPI and PyPI publication run the runtime dependency license-policy gate.
+- Docker builds run the same dependency license check, generate `THIRD_PARTY_NOTICES.md`, and retain
+  the packaged third-party license files in the image.
+- The public GitHub mirror excludes Gitea-specific workflows and the internal AQUA API
+  specification.
+
+These controls reduce release risk but do not replace the authentication and session work listed
+below.
+
 ## P0 — required before shared server operation
 
 ### Per-user login and server-side AQUA sessions
@@ -40,20 +56,6 @@ Acceptance criteria:
 - If a technical account mode remains available, make it an explicit restricted mode and document
   that secrets provided through container environment variables are visible to Docker
   administrators.
-
-### Control packaged source contents
-
-- Configure the source distribution with an explicit allow-list.
-- Include only files required to build, install, document, and license H2ORB.
-- Exclude local Word files, internal API references, caches, build output, `.env`, certificates,
-  tokens, and other workstation artefacts.
-- Inspect both the wheel and source archive in CI before publication.
-
-Acceptance criteria:
-
-- `python -m build` produces a wheel and source archive with a reviewed, deterministic file list.
-- Neither archive contains `.env`, credentials, certificates, Swagger files, local office
-  documents, caches, or internal host names.
 
 ## P1 — application hardening
 
@@ -106,6 +108,10 @@ Every released artefact must be checked for the licenses of both direct and tran
 dependencies. This includes Python packages, JavaScript packages if introduced later, bundled
 browser or driver binaries, and operating-system packages in the Docker image.
 
+The Python runtime dependency gate and the generation of third-party notices are implemented.
+Complete SBOM generation and license coverage for operating-system packages in the final container
+remain open.
+
 - Maintain a reviewed allow-list of commonly accepted permissive licenses, initially including
   Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, ISC, and PSF-2.0.
 - Require manual review for weak-copyleft licenses such as MPL-2.0 and LGPL, because the applicable
@@ -145,7 +151,7 @@ review, not a substitute for reviewing ambiguous or non-standard license terms.
 - Establish a dependency-update process, for example Dependabot or Renovate, with regular rebuilds
   and image scans.
 
-## Current review baseline (2026-10-12)
+## Current review baseline (2026-10-13)
 
 - No obvious remote-code-execution, SQL-injection, path-traversal, or unsafe HTML-rendering issue was
   found in the reviewed code.
@@ -155,8 +161,8 @@ review, not a substitute for reviewing ambiguous or non-standard license terms.
   in the development environment concerned the local `pip` and `pytest` tooling and do not replace
   a scan of the final Docker image.
 - `.env` is not tracked by Git and was not present in the inspected wheel.
-- The inspected source archive included more repository content than intended, including a local
-  Word document. This is addressed by the P0 packaging task above.
+- Release `0.1.3` uses the reviewed source-distribution allow-list. Its wheel and source archive do
+  not contain the local Word guide, internal Swagger specification, `.env`, or credentials.
 
 Automated scans reduce risk but do not prove that an application is secure. The P0 design and its
 acceptance tests remain prerequisites for operating H2ORB as a shared authenticated service.

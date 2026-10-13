@@ -7,6 +7,14 @@ AQUA remain on the server, while users work through a browser interface.
 H2ORB is an independent project and is not affiliated with or endorsed by any
 test-management vendor.
 
+Eine kompakte deutschsprachige Einführung mit Screenshots bietet die
+[`H2ORB Kurzanleitung`](docs/kurzanleitung.md).
+
+Normative behavior is documented separately: the
+[`result tree contract`](docs/result-tree.md) defines status calculation and aggregation, the
+[`report contract`](docs/report-contract.md) defines report contents, and the
+[`security roadmap`](docs/security-roadmap.md) records security requirements and remaining work.
+
 ## Current state
 
 This repository contains a locally runnable FastAPI application with an asynchronous AQUA
