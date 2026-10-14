@@ -20,6 +20,10 @@ class AquaConfigurationError(RuntimeError):
     """Raised when required AQUA connection settings are missing."""
 
 
+class AquaAuthenticationError(AquaApiError):
+    """Raised when AQUA rejects or can no longer renew a user session."""
+
+
 @dataclass(slots=True)
 class _OAuthToken:
     access_token: str
@@ -31,15 +35,13 @@ class _OAuthToken:
 
 
 class AquaClient:
-    """Shared asynchronous AQUA client safe for concurrent application requests.
+    """Asynchronous AQUA client bound to one authenticated H2ORB session.
 
     Endpoint-specific methods are added after mapping the v26.29.0.0 Swagger document.
     Keeping raw requests private prevents AQUA transport details leaking into services.
     """
 
     def __init__(self, settings: Settings) -> None:
-        self._username = settings.aqua_username
-        self._password = settings.aqua_password
         self._token: _OAuthToken | None = None
         self._token_lock = asyncio.Lock()
         verify: bool | ssl.SSLContext = settings.aqua_verify_tls
@@ -56,6 +58,10 @@ class AquaClient:
             headers={"Accept": "application/json"},
             trust_env=False,
         )
+
+    async def authenticate(self, username: str, password: str) -> None:
+        """Acquire tokens without retaining the user's password."""
+        self._token = await self._request_password_token(username, password)
 
     async def close(self) -> None:
         try:
@@ -192,8 +198,7 @@ class AquaClient:
                 **kwargs,
             )
             if response.status_code == httpx.codes.UNAUTHORIZED:
-                self._token = None
-                token = await self._access_token()
+                token = await self._renew_access_token()
                 response = await self._client.request(
                     method,
                     path,
@@ -214,31 +219,57 @@ class AquaClient:
         async with self._token_lock:
             if self._token is not None and self._token.is_valid():
                 return self._token.access_token
-            self._token = await self._request_token()
+            self._token = await self._refresh_access_token()
             return self._token.access_token
 
-    async def _request_token(self) -> _OAuthToken:
-        if not self._username or not self._password:
-            raise AquaConfigurationError(
-                "ARB_AQUA_USERNAME and ARB_AQUA_PASSWORD must be configured"
-            )
+    async def _renew_access_token(self) -> str:
+        async with self._token_lock:
+            self._token = await self._refresh_access_token()
+            return self._token.access_token
 
+    async def _request_password_token(self, username: str, password: str) -> _OAuthToken:
         try:
             response = await self._client.post(
                 "api/token",
                 data={
                     "grant_type": "password",
-                    "username": self._username,
-                    "password": self._password,
+                    "username": username,
+                    "password": password,
                 },
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
             response.raise_for_status()
             payload = response.json()
-            access_token = payload["access_token"]
         except (httpx.HTTPError, KeyError, ValueError, TypeError) as exc:
-            raise AquaApiError("AQUA authentication failed") from exc
+            raise AquaAuthenticationError("AQUA authentication failed") from exc
 
+        return self._token_from_payload(payload)
+
+    async def _refresh_access_token(self) -> _OAuthToken:
+        if self._token is None or not self._token.refresh_token:
+            raise AquaAuthenticationError("AQUA session expired")
+        try:
+            response = await self._client.post(
+                "api/token",
+                data={
+                    "grant_type": "refresh_token",
+                    "refresh_token": self._token.refresh_token,
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
+            response.raise_for_status()
+            payload = response.json()
+            if not payload.get("refresh_token"):
+                payload["refresh_token"] = self._token.refresh_token
+        except (httpx.HTTPError, KeyError, ValueError, TypeError) as exc:
+            self._token = None
+            raise AquaAuthenticationError("AQUA session expired") from exc
+
+        return self._token_from_payload(payload)
+
+    @staticmethod
+    def _token_from_payload(payload: dict[str, Any]) -> _OAuthToken:
+        access_token = payload["access_token"]
         expires_in = max(float(payload.get("expires_in", 300)), 1.0)
         return _OAuthToken(
             access_token=access_token,

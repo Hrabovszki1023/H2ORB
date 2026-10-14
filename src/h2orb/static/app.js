@@ -2,8 +2,17 @@ const translations = {
   de: {
     subtitle: "Testergebnisse aus AQUA kompakt auswerten",
     ready: "Bereit",
-    securityNoticeTitle: "Nur für interne Netze:",
-    securityNoticeText: "Diese Version verwendet die zentral hinterlegten AQUA-Zugangsdaten. Jeder Benutzer von H2ORB kann auf das konfigurierte AQUA-Projekt zugreifen. Den Server nicht öffentlich erreichbar machen. Eine persönliche Anmeldung mit eigenen AQUA-Zugangsdaten folgt in der nächsten Version.",
+    securityNoticeTitle: "Geschützte AQUA-Sitzung:",
+    securityNoticeText: "Die persönlichen AQUA-Zugangsdaten werden nur zur Anmeldung verwendet. Das Passwort wird nicht gespeichert; AQUA-Token bleiben ausschließlich in der serverseitigen Sitzung.",
+    loginTitle: "Mit AQUA anmelden",
+    loginHint: "Verwenden Sie Ihre persönlichen AQUA-Zugangsdaten. Das Passwort wird nach der Anmeldung nicht gespeichert.",
+    username: "Benutzername",
+    password: "Passwort",
+    login: "Anmelden",
+    loggingIn: "Anmeldung läuft …",
+    loginFailed: "Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen.",
+    sessionExpired: "Die Sitzung ist abgelaufen. Bitte erneut anmelden.",
+    logout: "Abmelden",
     selectFolder: "AQUA-Startordner auswählen",
     reload: "Neu laden",
     selectedFolder: "Gewählter Startordner",
@@ -52,8 +61,17 @@ const translations = {
   en: {
     subtitle: "Compact analysis of AQUA test results",
     ready: "Ready",
-    securityNoticeTitle: "Internal networks only:",
-    securityNoticeText: "This version uses centrally configured AQUA credentials. Every H2ORB user can access the configured AQUA project. Do not expose the server publicly. Sign-in with personal AQUA credentials will follow in the next version.",
+    securityNoticeTitle: "Protected AQUA session:",
+    securityNoticeText: "Personal AQUA credentials are used only for sign-in. The password is not stored; AQUA tokens remain exclusively in the server-side session.",
+    loginTitle: "Sign in to AQUA",
+    loginHint: "Use your personal AQUA credentials. The password is not stored after sign-in.",
+    username: "Username",
+    password: "Password",
+    login: "Sign in",
+    loggingIn: "Signing in …",
+    loginFailed: "Sign-in failed. Check your credentials.",
+    sessionExpired: "Your session has expired. Sign in again.",
+    logout: "Sign out",
     selectFolder: "Select AQUA start folder",
     reload: "Reload",
     selectedFolder: "Selected start folder",
@@ -118,6 +136,14 @@ const treeView = document.querySelector("#tree-view");
 const reportView = document.querySelector("#report-view");
 const reportPreview = document.querySelector("#report-preview");
 const downloadMarkdownButton = document.querySelector("#download-markdown");
+const applicationContent = document.querySelector("#application-content");
+const loginDialog = document.querySelector("#login-dialog");
+const loginForm = document.querySelector("#login-form");
+const loginUsername = document.querySelector("#login-username");
+const loginPassword = document.querySelector("#login-password");
+const loginSubmit = document.querySelector("#login-submit");
+const loginError = document.querySelector("#login-error");
+const logoutButton = document.querySelector("#logout");
 const resultRows = new Map();
 
 let selectedLocation = null;
@@ -128,6 +154,7 @@ let resultFilterWasActive = false;
 let expansionBeforeFilter = new Map();
 let activeResultView = "tree";
 const summaryFolderKeys = new Set();
+let csrfToken = null;
 
 function getInitialLanguage() {
   try {
@@ -189,16 +216,81 @@ function selectLocation({ projectId, folderId, label }) {
 }
 
 async function requestJson(url, options = {}) {
+  const headers = { Accept: "application/json", ...(options.headers || {}) };
+  if (csrfToken && options.method && options.method !== "GET") {
+    headers["X-CSRF-Token"] = csrfToken;
+  }
   const response = await fetch(url, {
     ...options,
-    headers: { Accept: "application/json", ...(options.headers || {}) },
+    headers,
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
+    if (response.status === 401 && !url.endsWith("/auth/login")) {
+      showLogin("sessionExpired");
+    }
     throw new Error(body.detail || t("requestFailed", { status: response.status }));
   }
   return response.json();
 }
+
+function showLogin(messageKey = null) {
+  csrfToken = null;
+  applicationContent.hidden = true;
+  logoutButton.hidden = true;
+  loginPassword.value = "";
+  loginError.hidden = !messageKey;
+  loginError.textContent = messageKey ? t(messageKey) : "";
+  if (!loginDialog.open) loginDialog.showModal();
+  loginUsername.focus();
+}
+
+function showApplication(session) {
+  csrfToken = session.csrfToken;
+  if (loginDialog.open) loginDialog.close();
+  applicationContent.hidden = false;
+  logoutButton.hidden = false;
+}
+
+loginDialog.addEventListener("cancel", (event) => event.preventDefault());
+
+loginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  loginError.hidden = true;
+  loginSubmit.disabled = true;
+  loginSubmit.textContent = t("loggingIn");
+  try {
+    const session = await requestJson("/api/v1/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: loginUsername.value,
+        password: loginPassword.value,
+      }),
+    });
+    loginPassword.value = "";
+    showApplication(session);
+    await loadProjects();
+  } catch (_) {
+    loginPassword.value = "";
+    loginError.textContent = t("loginFailed");
+    loginError.hidden = false;
+    loginPassword.focus();
+  } finally {
+    loginSubmit.disabled = false;
+    loginSubmit.textContent = t("login");
+  }
+});
+
+logoutButton.addEventListener("click", async () => {
+  try {
+    await requestJson("/api/v1/auth/logout", { method: "POST" });
+  } finally {
+    tree.replaceChildren();
+    scenarioResults.hidden = true;
+    showLogin();
+  }
+});
 
 function createNode({ label, projectId, folderId, hasChildren, level, parentPath = [] }) {
   const fullPath = [...parentPath, label];
@@ -703,4 +795,16 @@ analyseButton.addEventListener("click", async () => {
 });
 
 setLanguage(currentLanguage);
-loadProjects();
+void (async () => {
+  try {
+    const session = await requestJson("/api/v1/auth/session");
+    if (!session.authenticated) {
+      showLogin();
+      return;
+    }
+    showApplication(session);
+    await loadProjects();
+  } catch (_) {
+    showLogin();
+  }
+})();

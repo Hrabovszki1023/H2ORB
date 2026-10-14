@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "h2orb"
-version = "0.1.3"
+version = "0.2.0"
 description = "A result browser and reporting tool for test-management data."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -46,7 +46,6 @@ exclude = [
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "/.gitea/workflows",
   "/docs/*.md",
   "/docs/images/*.png",
   "/src",

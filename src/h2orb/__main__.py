@@ -11,7 +11,7 @@ def main() -> None:
         "h2orb.main:app",
         host=settings.host,
         port=settings.port,
-        reload=settings.environment == "development",
+        reload=settings.reload,
         log_level=settings.log_level.lower(),
     )
 

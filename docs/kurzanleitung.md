@@ -16,21 +16,42 @@ in folgenden Dokumenten:
 
 ## Sicherheitshinweis
 
-Die aktuelle Version verwendet zentral konfigurierte AQUA-Zugangsdaten. Jeder Benutzer, der die
-H2ORB-Oberfläche erreicht, kann die für dieses Konto freigegebenen AQUA-Projekte und Testergebnisse
-lesen. Der Server darf deshalb nur in einem vertrauenswürdigen internen Netz betrieben werden.
+Jeder Benutzer meldet sich in H2ORB mit seinen persönlichen AQUA-Zugangsdaten an. Das Passwort wird
+nur zur Anmeldung an AQUA verwendet und von H2ORB nicht gespeichert. AQUA-Token verbleiben in einer
+kurzlebigen, serverseitigen Sitzung; der Browser erhält lediglich ein zufälliges, nicht lesbares
+Sitzungs-Cookie.
 
 - Port `8000` nicht direkt im Internet veröffentlichen.
-- Den Zugriff mit Firewall-Regeln oder einem Reverse Proxy mit HTTPS und Zugriffskontrolle begrenzen.
-- Ein dediziertes AQUA-Konto mit Leserechten und möglichst wenigen freigegebenen Projekten verwenden.
+- Einen gemeinsam genutzten Server ausschließlich über einen HTTPS-Reverse-Proxy bereitstellen und
+  `ARB_SESSION_COOKIE_SECURE=true` setzen.
+- Den Zugriff zusätzlich mit Firewall-Regeln begrenzen und AQUA-Benutzern nur die benötigten Rechte
+  geben.
 - `.env`, Passwörter, Zertifikatsschlüssel und Zugriffstoken niemals in das Image oder Repository
   aufnehmen.
 - Erzeugte Berichte als potenziell vertrauliche Testdaten behandeln.
 
+### Lokaler Einzelplatzbetrieb
+
+Bei der Installation über PyPI läuft H2ORB lokal auf dem Arbeitsplatzrechner. Solange H2ORB
+ausschließlich an `127.0.0.1` gebunden ist, verlässt die HTTP-Verbindung zwischen Browser und
+H2ORB den Rechner nicht. Für diesen Einzelplatzbetrieb ist `http://127.0.0.1:8000` zulässig.
+
+```env
+ARB_HOST=127.0.0.1
+ARB_ENVIRONMENT=development
+ARB_SESSION_COOKIE_SECURE=false
+ARB_RELOAD=false
+```
+
+`ARB_HOST` darf dabei nicht auf `0.0.0.0` geändert und Port `8000` weder freigegeben noch
+weitergeleitet werden. Die Verbindung von H2ORB zu AQUA erfolgt weiterhin über HTTPS. Sobald H2ORB
+von einem anderen Rechner erreichbar sein soll, ist ein HTTPS-Reverse-Proxy erforderlich und
+`ARB_SESSION_COOKIE_SECURE=true` zu setzen.
+
 ## Auswertung starten
 
-1. H2ORB im Browser öffnen und das gewünschte AQUA-Projekt aufklappen.
-2. Den Projekt- oder Versionsordner als Startordner auswählen.
+1. H2ORB im Browser öffnen und mit den persönlichen AQUA-Zugangsdaten anmelden.
+2. Das gewünschte AQUA-Projekt aufklappen und den Projekt- oder Versionsordner auswählen.
 3. **Auswertung starten** anklicken. H2ORB lädt Szenarien, Testfälle, letzte Ausführungen und Defects
    rekursiv.
 4. Bei Bedarf auf **Report** wechseln und den Bericht als Markdown herunterladen.
@@ -105,13 +126,13 @@ Zuerst eine lokale `.env` anhand von `.env.example` erstellen. Anschließend das
 `linux/amd64`-Image laden und starten:
 
 ```powershell
-docker pull hrabovszki/h2orb:0.1.3
+docker pull hrabovszki/h2orb:0.2.0
 docker run --detach --name h2orb `
   --restart unless-stopped `
   --env-file .env `
   --env ARB_HOST=0.0.0.0 `
   --publish 8000:8000 `
-  hrabovszki/h2orb:0.1.3
+  hrabovszki/h2orb:0.2.0
 ```
 
 Für reproduzierbare Installationen sollte ein fester Versions- oder `sha-*`-Tag verwendet werden.

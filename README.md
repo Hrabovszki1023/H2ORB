@@ -1,8 +1,8 @@
 # H2ORB – H₂O Result Browser
 
 A result browser and reporting tool for test-management data. The current integration analyses
-AQUA test results through a server-side REST API proxy: credentials and direct communication with
-AQUA remain on the server, while users work through a browser interface.
+AQUA test results through a server-side REST API proxy. Each user signs in with personal AQUA
+credentials; direct communication with AQUA and the resulting tokens remain on the server.
 
 H2ORB is an independent project and is not affiliated with or endorsed by any
 test-management vendor.
@@ -91,6 +91,25 @@ h2orb
 
 Open <http://127.0.0.1:8000> after configuring the required `ARB_` environment variables.
 
+### Local workstation operation
+
+For installations delivered to a workstation through PyPI, H2ORB is intended to listen only on
+the loopback interface. The browser-to-H2ORB connection then remains on that computer and does not
+cross the network. HTTP is acceptable for this strictly local setup:
+
+```env
+ARB_HOST=127.0.0.1
+ARB_ENVIRONMENT=development
+ARB_SESSION_COOKIE_SECURE=false
+ARB_RELOAD=false
+ARB_AQUA_BASE_URL=https://aqua.example.invalid
+```
+
+Do not change `ARB_HOST` to `0.0.0.0`, forward port `8000`, or create a firewall exception. The
+outbound connection from H2ORB to AQUA remains protected by HTTPS and TLS verification. Local HTTP
+does not protect against malicious software already running with the user's permissions; local
+HTTPS would not remove that workstation-level risk either.
+
 ## Local setup
 
 Python 3.12 or newer is required.
@@ -109,23 +128,27 @@ Open <http://127.0.0.1:8000>. API documentation is available at
 Configuration uses environment variables prefixed with `ARB_`. Do not commit `.env` or real AQUA
 credentials.
 
-## Security notice for the current version
+## Authentication and secure deployment
 
-The current version uses the AQUA credentials configured centrally through environment variables.
-Consequently, every person who can reach the H2ORB web interface can read the AQUA projects and test
-data available to that account.
+H2ORB requests each user's personal AQUA credentials in a login dialog. The password is passed
+directly to AQUA for token acquisition and is not retained by H2ORB. AQUA access and refresh tokens
+are isolated in short-lived, in-memory server sessions; the browser receives only an opaque
+`HttpOnly` session cookie. Logout and session expiration close the AQUA client and invalidate that
+cookie.
 
 - Run H2ORB only in a trusted internal network.
 - Do not publish port `8000` directly on the Internet.
-- Restrict access with firewall rules; a reverse proxy with HTTPS and access control is recommended.
-- Use a dedicated, read-only AQUA account with only the projects H2ORB is intended to display.
+- For any shared deployment, terminate HTTPS at a reverse proxy and set
+  `ARB_SESSION_COOKIE_SECURE=true`; production mode refuses to start without this setting.
+- Restrict access additionally with firewall rules and grant AQUA users only the permissions they
+  require.
 - Keep `.env`, passwords, certificate keys, and access tokens outside the image and repository.
 - Treat generated reports as potentially confidential test data.
 
-The next version is planned to request personal AQUA credentials and keep separate server-side
-sessions for individual users. Until that authentication is implemented, network-level access
-control is mandatory. The prioritized implementation tasks and their acceptance criteria are
-maintained in the [security roadmap](docs/security-roadmap.md).
+The login endpoint is rate-limited and state-changing requests use a per-session CSRF token. HTTPS
+remains a deployment responsibility; without it, credentials and cookies are not protected while
+in transit. The remaining hardening tasks and acceptance criteria are maintained in the
+[security roadmap](docs/security-roadmap.md).
 
 ## Docker
 

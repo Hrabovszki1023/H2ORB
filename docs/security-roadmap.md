@@ -10,8 +10,8 @@ access controls and must not be reachable from the public Internet.
 The following controls are already part of the release process:
 
 - The source distribution uses an explicit allow-list.
-- Wheel and source archives exclude local office documents, the internal AQUA API specification,
-  `.env`, credentials, certificates, caches, and workstation artefacts.
+- Wheel and source archives exclude local office documents, internal Gitea workflows, the internal
+  AQUA API specification, `.env`, credentials, certificates, caches, and workstation artefacts.
 - TestPyPI and PyPI publication run the runtime dependency license-policy gate.
 - Docker builds run the same dependency license check, generate `THIRD_PARTY_NOTICES.md`, and retain
   the packaged third-party license files in the image.
@@ -21,24 +21,29 @@ The following controls are already part of the release process:
 These controls reduce release risk but do not replace the authentication and session work listed
 below.
 
+The application also implements personal AQUA login, one isolated AQUA client per H2ORB session,
+immediate password disposal after token acquisition, opaque `HttpOnly`/`SameSite=Strict` cookies,
+fixed session expiry, logout, generic login errors, login rate limiting, and CSRF protection for
+state-changing requests. Centrally configured AQUA usernames and passwords are no longer supported.
+
 ## P0 — required before shared server operation
 
 ### Per-user login and server-side AQUA sessions
 
-- Add a login dialog for personal AQUA credentials.
+- **Implemented:** Add a login dialog for personal AQUA credentials.
 - Send credentials only over HTTPS.
-- Validate the credentials directly against AQUA.
-- Discard the password immediately after token acquisition; never persist it in a file, database,
+- **Implemented:** Validate the credentials directly against AQUA.
+- **Implemented:** Discard the password immediately after token acquisition; never persist it in a file, database,
   browser storage, cookie, URL, report, or log.
-- Store AQUA access and refresh tokens only in the server-side session.
-- Replace the shared global AQUA client with a client bound to the authenticated H2ORB session.
-- Give the browser only an opaque, cryptographically random session identifier in a cookie with
-  `HttpOnly`, `Secure`, and `SameSite=Strict`.
-- Use short session lifetimes and require a new login if token renewal is not possible.
-- Implement logout so that the AQUA session is closed, server-side tokens are removed, and the
+- **Implemented:** Store AQUA access and refresh tokens only in the server-side session.
+- **Implemented:** Replace the shared global AQUA client with a client bound to the authenticated H2ORB session.
+- **Implemented:** Give the browser only an opaque, cryptographically random session identifier in a cookie with
+  `HttpOnly` and `SameSite=Strict`; production additionally enforces the `Secure` setting.
+- **Implemented:** Use short session lifetimes and require a new login if token renewal is not possible.
+- **Implemented:** Implement logout so that the AQUA session is closed, server-side tokens are removed, and the
   browser cookie is deleted.
-- Prevent session fixation and apply rate limiting to login attempts.
-- Return generic authentication errors that do not disclose whether an account exists.
+- **Implemented:** Prevent session fixation and apply rate limiting to login attempts.
+- **Implemented:** Return generic authentication errors that do not disclose whether an account exists.
 
 Acceptance criteria:
 
@@ -50,9 +55,8 @@ Acceptance criteria:
 
 ### Remove centrally stored AQUA passwords
 
-- Stop requiring `ARB_AQUA_USERNAME` and `ARB_AQUA_PASSWORD` for normal server operation.
-- Remove the credentials from `compose.yaml` examples and deployment documentation once login is
-  available.
+- **Implemented:** Stop requiring `ARB_AQUA_USERNAME` and `ARB_AQUA_PASSWORD` for normal server operation.
+- **Implemented:** Remove the credentials from `compose.yaml` examples and deployment documentation.
 - If a technical account mode remains available, make it an explicit restricted mode and document
   that secrets provided through container environment variables are visible to Docker
   administrators.
@@ -163,6 +167,9 @@ review, not a substitute for reviewing ambiguous or non-standard license terms.
 - `.env` is not tracked by Git and was not present in the inspected wheel.
 - Release `0.1.3` uses the reviewed source-distribution allow-list. Its wheel and source archive do
   not contain the local Word guide, internal Swagger specification, `.env`, or credentials.
+- Release `0.2.0` adds personal AQUA login and isolated server-side sessions. For a PyPI-installed
+  single-user workstation, HTTP is permitted only while the server is bound exclusively to
+  `127.0.0.1`; any network-accessible deployment requires HTTPS and secure cookies.
 
 Automated scans reduce risk but do not prove that an application is secure. The P0 design and its
 acceptance tests remain prerequisites for operating H2ORB as a shared authenticated service.
